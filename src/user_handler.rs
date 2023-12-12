@@ -12,7 +12,7 @@ impl User {
         User { id, name, age }
     }
 }
-#[get("/1")]
+#[get("/{id}")]
 pub async fn get_by_id(path: web::Path<u32>) -> Result<String> {
     let id = path.into_inner();
     let user = User::new(id, "Rust".to_string(), 18);
