@@ -25,10 +25,11 @@ pub async fn run() -> std::io::Result<()> {
     .await
 }
 
-struct MysqlPool(HashMap<String, String>);
-struct RedisConfig(HashMap<String, String>);
-struct CommonConfig(HashMap<String, String>);
-struct RequestContext {
+pub struct MysqlPool(HashMap<String, String>);
+pub struct RedisConfig(HashMap<String, String>);
+#[derive(Debug,Copy, Clone)]
+pub struct CommonConfig(HashMap<String, String>);
+pub struct RequestContext {
     map: HashMap<String, Box<dyn Any>>,
 }
 impl RequestContext {
@@ -43,6 +44,12 @@ impl RequestContext {
             .unwrap()
             .as_str()
     }
+}
+async fn init_request_context() -> RequestContext {
+    use uuid::Uuid;
+    let mut map: HashMap<String, Box<dyn Any>> = HashMap::new();
+    map.insert("traceId".to_string(), Box::new(Uuid::new_v4()));
+    RequestContext::new(map)
 }
 /// 接口请求计数
 /**
@@ -95,13 +102,9 @@ async fn config_redis() -> RedisConfig {
     RedisConfig(HashMap::new())
 }
 async fn common_config() -> CommonConfig {
-    CommonConfig(HashMap::new())
-}
-async fn init_request_context() -> RequestContext {
-    use uuid::Uuid;
-    let mut map: HashMap<String, Box<dyn Any>> = HashMap::new();
-    map.insert("traceId".to_string(), Box::new(Uuid::new_v4()));
-    RequestContext::new(map)
+    let mut config = HashMap::new();
+    config.insert("port".to_string(),"8080".to_string());
+    CommonConfig(config)
 }
 fn register_service(cfg: &mut web::ServiceConfig) {
     register_user_service(cfg);
@@ -110,7 +113,13 @@ fn register_service(cfg: &mut web::ServiceConfig) {
 }
 fn register_user_service(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/user").service(user_handler::get_by_id), // .guard(AuthorityGuard::new())
+        web::scope("/user")
+            .service(user_handler::get_by_id)
+            .service(user_handler::create_user)
+            .service(user_handler::query)
+            .service(user_handler::create)
+            .service(user_handler::create_by_form)
+            .service(user_handler::query_config), // .guard(AuthorityGuard::new())
     );
 }
 fn register_order_service(cfg: &mut web::ServiceConfig) {
