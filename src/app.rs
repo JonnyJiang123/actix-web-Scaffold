@@ -3,9 +3,15 @@ use actix_web::{
     guard::{Guard, GuardContext},
     web, App, HttpServer,
 };
+use env_logger::Env;
+use serde_json::{Number, Value};
+use std::env;
 use std::{any::Any, collections::HashMap, sync::RwLock};
 pub async fn run() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    env::set_var("RUST_LOG", "actix_web=debug");
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    HttpServer::new(move || {
         App::new()
             // 配置mysql
             .app_data(web::Data::new(config_mysql()))
@@ -27,8 +33,8 @@ pub async fn run() -> std::io::Result<()> {
 
 pub struct MysqlPool(HashMap<String, String>);
 pub struct RedisConfig(HashMap<String, String>);
-#[derive(Debug,Copy, Clone)]
-pub struct CommonConfig(HashMap<String, String>);
+#[derive(Debug)]
+pub struct CommonConfig(HashMap<String, Value>);
 pub struct RequestContext {
     map: HashMap<String, Box<dyn Any>>,
 }
@@ -101,26 +107,15 @@ async fn config_mysql() -> MysqlPool {
 async fn config_redis() -> RedisConfig {
     RedisConfig(HashMap::new())
 }
-async fn common_config() -> CommonConfig {
+fn common_config() -> CommonConfig {
     let mut config = HashMap::new();
-    config.insert("port".to_string(),"8080".to_string());
-    CommonConfig(config)
+    config.insert("port".to_string(), Value::Number(Number::from(8080)));
+    CommonConfig(config.clone())
 }
 fn register_service(cfg: &mut web::ServiceConfig) {
-    register_user_service(cfg);
+    user_handler::register_user_service(cfg);
     register_order_service(cfg);
     register_product_service(cfg);
-}
-fn register_user_service(cfg: &mut web::ServiceConfig) {
-    cfg.service(
-        web::scope("/user")
-            .service(user_handler::get_by_id)
-            .service(user_handler::create_user)
-            .service(user_handler::query)
-            .service(user_handler::create)
-            .service(user_handler::create_by_form)
-            .service(user_handler::query_config), // .guard(AuthorityGuard::new())
-    );
 }
 fn register_order_service(cfg: &mut web::ServiceConfig) {
     cfg.service(web::scope("/order"));
@@ -128,3 +123,6 @@ fn register_order_service(cfg: &mut web::ServiceConfig) {
 fn register_product_service(cfg: &mut web::ServiceConfig) {
     cfg.service(web::scope("/product"));
 }
+
+#[derive(Debug)]
+pub struct AppState(HashMap<String, Value>);
