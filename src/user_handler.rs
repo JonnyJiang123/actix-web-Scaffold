@@ -1,5 +1,6 @@
-use crate::app::{AppState, CommonConfig};
-use actix_web::{get, post, web, Result};
+use crate::app::CommonConfig;
+use crate::common::dto::{RestRequest, RestResponse};
+use actix_web::{get, post, web, Responder, Result};
 use serde::{Deserialize, Serialize};
 
 pub fn register_user_service(cfg: &mut web::ServiceConfig) {
@@ -56,11 +57,12 @@ pub async fn query(user_query: web::Query<UserQuery>) -> Result<String> {
     println!("user query is {:?}", query);
     Ok("OK".to_string())
 }
-
+/// 使用标准的RestRequest、RestResponse
 #[post("/create")]
-pub async fn create(json: web::Json<User>) -> Result<String> {
+pub async fn create(json: web::Json<RestRequest<User>>) -> Result<impl Responder> {
     let user = json.into_inner();
-    Ok(serde_json::to_string(&user)?)
+    let response = RestResponse::new(user);
+    Ok(web::Json(response))
 }
 
 #[post("/create_by_form")]
