@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 /// rest 请求头
 #[derive(Deserialize, Serialize, Debug)]
 pub struct RestRequest<T> {
@@ -23,7 +24,7 @@ pub struct RestResponse<T> {
 impl<T> RestResponse<T> {
     pub fn new(data: T) -> RestResponse<T> {
         RestResponse {
-            trace_id: String::from("aaa"),
+            trace_id: Uuid::new_v4().to_string(),
             response: data,
         }
     }

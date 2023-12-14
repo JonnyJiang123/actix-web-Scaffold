@@ -1,5 +1,6 @@
-use crate::app::CommonConfig;
+/*！user_service  */
 use crate::common::dto::{RestRequest, RestResponse};
+use crate::config::common::CommonConfig;
 use actix_web::{get, post, web, Responder, Result};
 use serde::{Deserialize, Serialize};
 
