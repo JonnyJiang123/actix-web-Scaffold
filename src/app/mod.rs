@@ -5,12 +5,7 @@ mod service;
 mod state;
 use crate::config::{common, db};
 use actix_web::{web, App, HttpServer};
-use env_logger::Env;
-use std::env;
 pub async fn run() -> std::io::Result<()> {
-    env::set_var("RUST_LOG", "actix_web=debug");
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
     HttpServer::new(move || {
         App::new()
             // 配置mysql

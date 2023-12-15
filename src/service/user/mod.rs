@@ -1,7 +1,9 @@
 /*！user_service  */
 use crate::common::dto::{RestRequest, RestResponse};
+use crate::common::err::CustomerError;
 use crate::config::common::CommonConfig;
 use actix_web::{get, post, web, Responder, Result};
+use log;
 use serde::{Deserialize, Serialize};
 
 pub fn register_user_service(cfg: &mut web::ServiceConfig) {
@@ -12,7 +14,8 @@ pub fn register_user_service(cfg: &mut web::ServiceConfig) {
             .service(query)
             .service(create)
             .service(create_by_form)
-            .service(query_config), // .guard(AuthorityGuard::new())
+            .service(query_config)
+            .service(error_test), // .guard(AuthorityGuard::new())
     );
 }
 
@@ -77,4 +80,16 @@ pub async fn query_config(config: web::Data<CommonConfig>) -> Result<String> {
     let config = config.get_ref();
     println!("config is {:?}", config);
     Ok(String::from("OK"))
+}
+#[get("/error_test")]
+pub async fn error_test() -> Result<impl Responder, CustomerError> {
+    let err = false;
+    if err {
+        return Ok(web::Json(RestResponse::new("ok")));
+    }
+    let err = CustomerError::ValidationError {
+        field: "name".to_string(),
+    };
+    log::error!("{}", err);
+    Err(err)
 }
