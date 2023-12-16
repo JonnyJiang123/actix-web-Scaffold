@@ -5,6 +5,7 @@ mod service;
 mod state;
 use crate::config::{common, db};
 use actix_web::{web, App, HttpServer};
+
 pub async fn run() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()

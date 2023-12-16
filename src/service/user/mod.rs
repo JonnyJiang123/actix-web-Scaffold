@@ -2,8 +2,8 @@
 use crate::common::dto::{RestRequest, RestResponse};
 use crate::common::err::CustomerError;
 use crate::config::common::CommonConfig;
+use crate::common::log;
 use actix_web::{get, post, web, Responder, Result};
-use log;
 use serde::{Deserialize, Serialize};
 
 pub fn register_user_service(cfg: &mut web::ServiceConfig) {
@@ -19,7 +19,7 @@ pub fn register_user_service(cfg: &mut web::ServiceConfig) {
     );
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize,Debug,Clone)]
 struct User {
     id: u32,
     name: String,
@@ -63,12 +63,14 @@ pub async fn query(user_query: web::Query<UserQuery>) -> Result<String> {
 }
 /// 使用标准的RestRequest、RestResponse
 #[post("/create")]
-pub async fn create(json: web::Json<RestRequest<User>>) -> Result<impl Responder> {
+#[tracing::instrument(name="create",fields(trace_id,request,response),err(level = tracing::Level::ERROR))]
+pub async fn create(json: web::Json<RestRequest<User>>) -> Result<impl Responder>{
     let user = json.into_inner();
-    let response = RestResponse::new(user);
+    let response = RestResponse::new(user.clone());
+
+    log::fill_trace_args(&user,&response);
     Ok(web::Json(response))
 }
-
 #[post("/create_by_form")]
 pub async fn create_by_form(form: web::Form<User>) -> Result<String> {
     let data = form.into_inner();
@@ -76,20 +78,20 @@ pub async fn create_by_form(form: web::Form<User>) -> Result<String> {
 }
 
 #[get("/config")]
+#[tracing::instrument(name="create",err(level = tracing::Level::ERROR))]
 pub async fn query_config(config: web::Data<CommonConfig>) -> Result<String> {
     let config = config.get_ref();
-    println!("config is {:?}", config);
     Ok(String::from("OK"))
 }
 #[get("/error_test")]
+#[tracing::instrument(name="error_test",err(level = tracing::Level::ERROR))]
 pub async fn error_test() -> Result<impl Responder, CustomerError> {
     let err = false;
     if err {
-        return Ok(web::Json(RestResponse::new("ok")));
+        return Ok(web::Json(RestResponse::new(&"ok")));
     }
     let err = CustomerError::ValidationError {
         field: "name".to_string(),
     };
-    log::error!("{}", err);
     Err(err)
 }
