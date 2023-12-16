@@ -1,5 +1,5 @@
 use serde::Serialize;
-use tracing::{event, Span};
+use tracing::{event, Span,Level};
 use crate::common::dto::{RestRequest, RestResponse};
 
 pub fn fill_trace_args<T:Serialize,R:Serialize>(request:&RestRequest<T>, response:&RestResponse<R>) {
